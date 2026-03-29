@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Porcelain Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --dark: #1A1A18;
+    --gold: #C8963E;
+    --rust: #B84C2A;
+    --sage: #7A8C6E;
+    --tile: #E8E2D6;
+    --grout: #C4BAA8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: var(--cream);
+    color: var(--dark);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grout) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grout) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* PAGES */
+  .page { display: none; position: relative; z-index: 1; min-height: 100vh; }
+  .page.active { display: block; }
+
+  .wrapper      { max-width: 680px;  margin: 0 auto; padding: 0 24px 80px; }
+  .wrapper-wide { max-width: 1020px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 60px 0 44px;
+    border-bottom: 2px solid var(--dark);
+    margin-bottom: 44px;
+  }
+
+  .header-eyebrow {
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(52px, 8vw, 96px);
+    font-weight: 900; line-height: 0.9;
+    letter-spacing: -0.02em; color: var(--dark); margin-bottom: 16px;
+  }
+  h1 span { font-style: italic; color: var(--rust); }
+
+  .header-sub {
+    font-size: 12px; letter-spacing: 0.15em;
+    color: var(--sage); text-transform: uppercase;
+  }
+
+  .header-ornament {
+    margin: 24px auto 0; width: 80px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  /* NAV */
+  .nav-strip {
+    display: flex; justify-content: center;
+    gap: 0; margin-bottom: 44px;
+  }
+
+  .nav-btn {
+    background: white;
+    border: 1.5px solid var(--dark);
+    padding: 12px 32px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.25em; text-transform: uppercase;
+    cursor: pointer; color: var(--dark);
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+  }
+  .nav-btn + .nav-btn { margin-left: -1.5px; }
+  .nav-btn.active, .nav-btn:hover {
+    background: var(--dark); color: var(--cream); z-index: 1;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--rust); color: white;
+    font-size: 9px; width: 17px; height: 17px;
+    border-radius: 50%; margin-left: 8px;
+    vertical-align: middle; line-height: 1;
+    transition: background 0.15s;
+  }
+  .nav-btn.active .badge { background: var(--gold); color: var(--dark); }
+
+  /* FORM PANEL */
+  .form-panel {
+    background: white;
+    border: 2px solid var(--dark);
+    box-shadow: 6px 6px 0 var(--dark);
+    padding: 40px 36px;
+    animation: slideIn 0.4s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 28px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--grout);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panel-title::before { content: '✦'; color: var(--gold); font-size: 14px; }
+
+  .field { margin-bottom: 22px; }
+
+  label {
+    display: block; font-size: 10px; font-weight: 500;
+    letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--sage); margin-bottom: 8px;
+  }
+
+  input[type="text"], textarea {
+    width: 100%; background: var(--cream);
+    border: 1.5px solid var(--grout); border-radius: 0;
+    padding: 12px 14px;
+    font-family: 'DM Mono', monospace; font-size: 13px; color: var(--dark);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none; appearance: none;
+  }
+  input[type="text"]:focus, textarea:focus {
+    border-color: var(--gold); box-shadow: 3px 3px 0 var(--gold);
+  }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+  /* STARS */
+  .star-field { margin-bottom: 22px; }
+  .stars {
+    display: flex; flex-direction: row-reverse;
+    justify-content: flex-end; gap: 4px; margin-top: 8px;
+  }
+  .stars input { display: none; }
+  .stars label {
+    font-size: 30px; cursor: pointer; color: var(--grout);
+    transition: color 0.12s; letter-spacing: 0;
+    margin: 0; padding: 2px; text-transform: none;
+  }
+  .stars:hover label { color: var(--gold); }
+  .stars label:hover ~ label { color: var(--grout); }
+  .stars input:checked ~ label { color: var(--gold); }
+  .stars input:checked + label ~ label { color: var(--grout); }
+
+  .code-input {
+    font-size: 16px; font-weight: 500;
+    letter-spacing: 0.2em; text-align: center; text-transform: uppercase;
+  }
+
+  /* SUBMIT */
+  .submit-btn {
+    width: 100%; background: var(--dark); color: var(--cream);
+    border: 2px solid var(--dark); padding: 16px;
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+    margin-top: 8px; box-shadow: 4px 4px 0 var(--rust);
+  }
+  .submit-btn:hover {
+    background: var(--rust); border-color: var(--rust);
+    transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--dark);
+  }
+  .submit-btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--dark); }
+
+  .flash {
+    display: none; background: var(--sage); color: white;
+    padding: 12px 16px; font-size: 11px;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    text-align: center; margin-top: 16px;
+    animation: flashIn 0.3s ease;
+  }
+  @keyframes flashIn {
+    from { opacity: 0; transform: scaleY(0.8); }
+    to   { opacity: 1; transform: scaleY(1); }
+  }
+
+  /* LEDGER PAGE */
+  .ledger-header-row {
+    display: flex; align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+  }
+
+  .ledger-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ledger-title::before { content: '✦'; color: var(--rust); font-size: 16px; }
+
+  .entry-count { font-size: 11px; color: var(--grout); letter-spacing: 0.15em; }
+
+  /* FILTER BAR */
+  .filter-bar { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+
+  .filter-btn {
+    background: white; border: 1.5px solid var(--grout);
+    padding: 6px 14px;
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    cursor: pointer; color: var(--sage); transition: all 0.15s;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    background: var(--dark); border-color: var(--dark); color: var(--cream);
+  }
+
+  /* GRID */
+  .entries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 20px;
+  }
+
+  /* CARDS */
+  .entry-card {
+    background: white; border: 1.5px solid var(--grout);
+    padding: 22px 24px;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    animation: cardIn 0.35s ease both;
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .entry-card:hover {
+    border-color: var(--gold);
+    box-shadow: 4px 4px 0 var(--gold);
+    transform: translate(-2px, -2px);
+  }
+
+  .card-header {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; gap: 8px; margin-bottom: 10px;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; font-weight: 700; line-height: 1.25; flex: 1;
+  }
+  .card-stars { font-size: 13px; white-space: nowrap; flex-shrink: 0; color: var(--gold); }
+  .stars-3 .card-stars { color: var(--sage); }
+  .stars-2 .card-stars { color: #B88040; }
+  .stars-1 .card-stars { color: var(--rust); }
+
+  .card-meta { display: flex; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+  .meta-chip {
+    font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--sage);
+  }
+  .meta-chip.code {
+    background: var(--tile); padding: 3px 8px;
+    font-weight: 500; letter-spacing: 0.25em; color: var(--rust);
+  }
+
+  .card-description {
+    font-size: 12px; color: #555; line-height: 1.65;
+    border-top: 1px solid var(--tile); padding-top: 10px; margin-top: 8px;
+  }
+
+  .card-footer {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-top: 12px;
+  }
+  .card-date { font-size: 9px; letter-spacing: 0.15em; color: var(--grout); text-transform: uppercase; }
+
+  .delete-btn {
+    background: none; border: none; color: var(--grout);
+    cursor: pointer; font-size: 13px; padding: 2px 4px;
+    transition: color 0.15s; line-height: 1;
+  }
+  .delete-btn:hover { color: var(--rust); }
+
+  /* EMPTY */
+  .empty-state {
+    text-align: center; padding: 80px 20px;
+    color: var(--grout); border: 2px dashed var(--grout);
+    grid-column: 1 / -1;
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; display: block; }
+  .empty-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-style: italic; margin-bottom: 8px; color: var(--grout);
+  }
+  .empty-sub { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 24px; }
+  .empty-cta {
+    background: none; border: 1.5px solid var(--grout); padding: 10px 24px;
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.25em; text-transform: uppercase;
+    cursor: pointer; color: var(--grout); transition: all 0.15s;
+  }
+  .empty-cta:hover { background: var(--dark); border-color: var(--dark); color: var(--cream); }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 48px 0 24px;
+    border-top: 1px solid var(--grout); margin-top: 64px;
+    font-size: 10px; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--grout);
+  }
+
+  @media (max-width: 600px) {
+    .entries-grid { grid-template-columns: 1fr; }
+    .form-panel { padding: 28px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════
+     PAGE: HOME / LOG ENTRY
+═══════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="wrapper">
+
+    <header>
+      <p class="header-eyebrow">Field Research Division</p>
+      <h1>The <span>Porcelain</span><br>Report</h1>
+      <p class="header-sub">Public Restroom Quality Index</p>
+      <div class="header-ornament"></div>
+    </header>
+
+    <nav class="nav-strip">
+      <button class="nav-btn active" onclick="goTo('home')">✦ Log Entry</button>
+      <button class="nav-btn" onclick="goTo('ledger')">The Ledger <span class="badge" id="home-badge">0</span></button>
+    </nav>
+
+    <div class="form-panel">
+      <h2 class="panel-title">Submit an Entry</h2>
+
+      <div class="field">
+        <label for="f-title">Establishment Name</label>
+        <input type="text" id="f-title" placeholder="e.g. Central Park Pavilion" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="f-location">Location</label>
+        <input type="text" id="f-location" placeholder="e.g. New York, NY" autocomplete="off">
+      </div>
+
+      <div class="star-field">
+        <label>Star Rating</label>
+        <div class="stars" id="starRating">
+          <input type="radio" name="stars" id="s5" value="5"><label for="s5">★</label>
+          <input type="radio" name="stars" id="s4" value="4"><label for="s4">★</label>
+          <input type="radio" name="stars" id="s3" value="3"><label for="s3">★</label>
+          <input type="radio" name="stars" id="s2" value="2"><label for="s2">★</label>
+          <input type="radio" name="stars" id="s1" value="1"><label for="s1">★</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-code">Bathroom Code</label>
+        <input type="text" id="f-code" class="code-input" placeholder="e.g. 4291" maxlength="10" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="f-desc">Description & Notes</label>
+        <textarea id="f-desc" placeholder="Cleanliness, amenities, odor situation, overall vibe..."></textarea>
+      </div>
+
+      <button class="submit-btn" onclick="submitEntry()">✦ Log This Facility</button>
+      <div class="flash" id="flash">Entry recorded — thank you for your service.</div>
+    </div>
+
+    <footer>The Porcelain Report · Public Restroom Quality Index · Est. 2025</footer>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════
+     PAGE: LEDGER
+═══════════════════════════ -->
+<div class="page" id="page-ledger">
+  <div class="wrapper-wide">
+
+    <header>
+      <p class="header-eyebrow">Field Research Division</p>
+      <h1>The <span>Porcelain</span><br>Report</h1>
+      <p class="header-sub">Public Restroom Quality Index</p>
+      <div class="header-ornament"></div>
+    </header>
+
+    <nav class="nav-strip">
+      <button class="nav-btn" onclick="goTo('home')">✦ Log Entry</button>
+      <button class="nav-btn active" onclick="goTo('ledger')">The Ledger <span class="badge" id="ledger-badge">0</span></button>
+    </nav>
+
+    <div class="ledger-header-row">
+      <h2 class="ledger-title">The Ledger</h2>
+      <span class="entry-count" id="entryCount">0 entries</span>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" onclick="setFilter(5, this)">★★★★★</button>
+      <button class="filter-btn" onclick="setFilter(4, this)">★★★★</button>
+      <button class="filter-btn" onclick="setFilter(3, this)">★★★</button>
+      <button class="filter-btn" onclick="setFilter(2, this)">★★</button>
+      <button class="filter-btn" onclick="setFilter(1, this)">★</button>
+    </div>
+
+    <div class="entries-grid" id="entriesGrid"></div>
+
+    <footer>The Porcelain Report · Public Restroom Quality Index · Est. 2025</footer>
+  </div>
+</div>
+
+
+<script>
+  let entries = [];
+  let currentFilter = 'all';
+
+  /* ── NAV ── */
+  function goTo(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    window.scrollTo(0, 0);
+    if (page === 'ledger') renderEntries();
+  }
+
+  /* ── FORM ── */
+  function getStarRating() {
+    const checked = document.querySelector('input[name="stars"]:checked');
+    return checked ? parseInt(checked.value) : 0;
+  }
+
+  function submitEntry() {
+    const title    = document.getElementById('f-title').value.trim();
+    const location = document.getElementById('f-location').value.trim();
+    const rating   = getStarRating();
+    const code     = document.getElementById('f-code').value.trim();
+    const desc     = document.getElementById('f-desc').value.trim();
+
+    if (!title || !location || !rating) {
+      if (!title)  highlight('f-title');
+      if (!location) highlight('f-location');
+      if (!rating) highlightStars();
+      return;
+    }
+
+    entries.unshift({
+      id: Date.now(), title, location, rating,
+      code: code || '—', desc,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    });
+
+    saveEntries();
+    updateBadges();
+    resetForm();
+    showFlash();
+  }
+
+  function highlight(id) {
+    const el = document.getElementById(id);
+    el.style.borderColor = 'var(--rust)';
+    el.style.boxShadow   = '3px 3px 0 var(--rust)';
+    setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1500);
+  }
+
+  function highlightStars() {
+    const el = document.getElementById('starRating');
+    el.style.filter = 'drop-shadow(0 0 4px var(--rust))';
+    setTimeout(() => el.style.filter = '', 1500);
+  }
+
+  function resetForm() {
+    ['f-title','f-location','f-code','f-desc'].forEach(id => document.getElementById(id).value = '');
+    const checked = document.querySelector('input[name="stars"]:checked');
+    if (checked) checked.checked = false;
+  }
+
+  function showFlash() {
+    const flash = document.getElementById('flash');
+    flash.style.display = 'block';
+    setTimeout(() => flash.style.display = 'none', 2800);
+  }
+
+  /* ── LEDGER ── */
+  function setFilter(val, btn) {
+    currentFilter = val;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderEntries();
+  }
+
+  function deleteEntry(id) {
+    entries = entries.filter(e => e.id !== id);
+    saveEntries();
+    updateBadges();
+    renderEntries();
+  }
+
+  function renderEntries() {
+    const grid  = document.getElementById('entriesGrid');
+    const count = document.getElementById('entryCount');
+
+    const filtered = currentFilter === 'all'
+      ? entries
+      : entries.filter(e => e.rating === currentFilter);
+
+    count.textContent = `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`;
+    grid.innerHTML = '';
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-icon">🚻</span>
+          <p class="empty-text">No reports on record.</p>
+          <p class="empty-sub">${currentFilter === 'all' ? 'Submit the first inspection' : 'No entries at this rating'}</p>
+          ${currentFilter === 'all' ? `<button class="empty-cta" onclick="goTo('home')">✦ Log a Facility</button>` : ''}
+        </div>`;
+      return;
+    }
+
+    filtered.forEach((e, i) => {
+      const card = document.createElement('div');
+      card.className = `entry-card stars-${e.rating}`;
+      card.style.animationDelay = `${i * 0.04}s`;
+      const stars = '★'.repeat(e.rating) + '☆'.repeat(5 - e.rating);
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-title">${esc(e.title)}</div>
+          <div class="card-stars">${stars}</div>
+        </div>
+        <div class="card-meta">
+          <span class="meta-chip">📍 ${esc(e.location)}</span>
+          ${e.code !== '—' ? `<span class="meta-chip code">🔑 ${esc(e.code)}</span>` : ''}
+        </div>
+        ${e.desc ? `<div class="card-description">${esc(e.desc)}</div>` : ''}
+        <div class="card-footer">
+          <span class="card-date">Logged ${e.date}</span>
+          <button class="delete-btn" onclick="deleteEntry(${e.id})" title="Remove">✕</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+  }
+
+  /* ── UTILS ── */
+  function updateBadges() {
+    const n = entries.length;
+    document.getElementById('home-badge').textContent   = n;
+    document.getElementById('ledger-badge').textContent = n;
+  }
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function saveEntries() {
+    try { localStorage.setItem('porcelain_report', JSON.stringify(entries)); } catch(e) {}
+  }
+
+  (function init() {
+    try {
+      const saved = localStorage.getItem('porcelain_report');
+      if (saved) entries = JSON.parse(saved);
+    } catch(e) {}
+    updateBadges();
+  })();
+</script>
+</body>
+</html>
